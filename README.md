@@ -1,106 +1,147 @@
-shadowsocks
-===========
+ssrpanel后端安装(google云)
 
-[![PyPI version]][PyPI]
-[![Build Status]][Travis CI]
-[![Coverage Status]][Coverage]
+关闭防火墙
+	centos6
+	service iptables stop    #关闭命令  
+	chkconfig iptables off   # 永久关闭防火墙
+	centos7
+	systemctl stop firewalld.service	#关闭防火墙
+	systemctl disable firewalld.service #关闭开机启动
 
-A fast tunnel proxy that helps you bypass firewalls.
+谷歌加速安装[OpenVZ 以外的（ KVM 、 Xen 、 VMware 等）]
+	cd /root
+	yum install wget -y
+	wget --no-check-certificate https://github.com/teddysun/across/raw/master/bbr.sh
+	chmod +x bbr.sh
+	./bbr.sh
 
-Server
-------
-
-### Install
-
-Debian / Ubuntu:
-
-    apt-get install python-pip
-    pip install shadowsocks
-
-CentOS:
-
-    yum install python-setuptools && easy_install pip
-    pip install shadowsocks
-
-Windows:
-
-See [Install Server on Windows]
-
-### Usage
-
-    ssserver -p 443 -k password -m aes-256-cfb
-
-To run in the background:
-
-    sudo ssserver -p 443 -k password -m aes-256-cfb --user nobody -d start
-
-To stop:
-
-    sudo ssserver -d stop
-
-To check the log:
-
-    sudo less /var/log/shadowsocks.log
-
-Check all the options via `-h`. You can also use a [Configuration] file
-instead.
-
-Client
-------
-
-* [Windows] / [OS X]
-* [Android] / [iOS]
-* [OpenWRT]
-
-Use GUI clients on your local PC/phones. Check the README of your client
-for more information.
-
-Documentation
--------------
-
-You can find all the documentation in the [Wiki].
-
-License
--------
-
-Copyright 2015 clowwindy
-
-Licensed under the Apache License, Version 2.0 (the "License"); you may
-not use this file except in compliance with the License. You may obtain
-a copy of the License at
-
-    http://www.apache.org/licenses/LICENSE-2.0
-
-Unless required by applicable law or agreed to in writing, software
-distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
-WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
-License for the specific language governing permissions and limitations
-under the License.
-
-Bugs and Issues
-----------------
-
-* [Troubleshooting]
-* [Issue Tracker]
-* [Mailing list]
+查看BBR是否启动
+	lsmod | grep bbr
 
 
+环境安装	
+	yum -y groupinstall "Development Tools"
+	wget https://github.com/jedisct1/libsodium/releases/download/1.0.15/libsodium-1.0.15.tar.gz
+	tar xf libsodium-1.0.15.tar.gz && cd libsodium-1.0.15
+	./configure && make -j2 && make install
+	echo /usr/local/lib > /etc/ld.so.conf.d/usr_local_lib.conf
+	ldconfig
 
-[Android]:           https://github.com/shadowsocks/shadowsocks-android
-[Build Status]:      https://travis-ci.org/falseen/shadowsocks.svg?branch=manyuser-travis
-[Configuration]:     https://github.com/shadowsocks/shadowsocks/wiki/Configuration-via-Config-File
-[Coverage Status]:   https://jenkins.shadowvpn.org/result/shadowsocks
-[Coverage]:          https://jenkins.shadowvpn.org/job/Shadowsocks/ws/PYENV/py34/label/linux/htmlcov/index.html
-[Debian sid]:        https://packages.debian.org/unstable/python/shadowsocks
-[iOS]:               https://github.com/shadowsocks/shadowsocks-iOS/wiki/Help
-[Issue Tracker]:     https://github.com/shadowsocks/shadowsocks/issues?state=open
-[Install Server on Windows]: https://github.com/shadowsocks/shadowsocks/wiki/Install-Shadowsocks-Server-on-Windows
-[Mailing list]:      https://groups.google.com/group/shadowsocks
-[OpenWRT]:           https://github.com/shadowsocks/openwrt-shadowsocks
-[OS X]:              https://github.com/shadowsocks/shadowsocks-iOS/wiki/Shadowsocks-for-OSX-Help
-[PyPI]:              https://pypi.python.org/pypi/shadowsocks
-[PyPI version]:      https://img.shields.io/pypi/v/shadowsocks.svg?style=flat
-[Travis CI]:         https://travis-ci.org/falseen/shadowsocks
-[Troubleshooting]:   https://github.com/shadowsocks/shadowsocks/wiki/Troubleshooting
-[Wiki]:              https://github.com/shadowsocks/shadowsocks/wiki
-[Windows]:           https://github.com/shadowsocks/shadowsocks-csharp
+后端程序
+	cd /root
+	git clone -b manyuser https://github.com/shadowsocksrr/shadowsocksr.git
+	git clone -b manyuser https://github.com/glzjin/shadowsocks.git
+	cd shadowsocksr
+	cp setup_cymysql.sh ../shadowsocks
+	cp initcfg.sh ../shadowsocks
+	cd ../shadowsocks
+	./setup_cymysql.sh
+	./initcfg.sh
+
+设置程序的配置文件
+	cp apiconfig.py userapiconfig.py
+	cp config.json user-config.json
+	vi userapiconfig.py
+		配置文件（需要修改的地方）
+		# Config
+		NODE_ID = 8
+		# hour,set 0 to disable
+		SPEEDTEST = 1
+		SERVER_PUB_ADDR = '45.32.000.00'  # mujson_mgr need this to generate ssr link
+		API_INTERFACE = 'glzjinmod'  # glzjinmod, modwebapi
+		WEBAPI_URL = 'http://45.32.000.00/mu'
+		WEBAPI_TOKEN = '****'
+		# Mysql
+		MYSQL_HOST = '45.32.000.00'
+		MYSQL_PORT = 3306
+		MYSQL_USER = 'root'
+		MYSQL_PASS = '***'
+		MYSQL_DB = 'root'
+		# API
+		API_HOST = '45.32.000.00'
+		API_PORT = 80
+		API_PATH = '/mu/v3/'
+
+修改文件
+	vi userapiconfig.py
+		# Config
+		API_INTERFACE = 'glzjinmod' 
+	vi user-config.json
+		"connect_verbose_info": 1,
+	vi usermysql.json
+		"host": "45.76.000.00",
+		"port": 3306,
+		"user": "root",
+		"password": "****",
+		"db": "root",
+		"node_id": 14,
+		
+安装supervisor守护进程
+	
+一、安装supervisor
+       
+   yum install python-setuptools
+     
+   easy_install supervisor
+
+
+二、修改supervisor 配置文件
+      
+  supervisord
+      
+  mkdir /etc/supervisor
+    
+  echo_supervisord_conf > /etc/supervisor/supervisord.conf
+      
+   vi /etc/supervisor/supervisord.conf
+
+[program:ssr]
+
+command=python /root/shadowsocks/shadowsocks/server.py
+
+autorestart=true
+
+autostart=true
+
+user=root
+
+
+三、启动supervisor服务
+
+
+       supervisord
+
+       supervisorctl
+
+        ->reload
+
+        ->restart ssr
+
+
+打开 supervisor 命令行及常用命令
+
+
+      supervisorctl
+
+          ->status         # 查看状态
+
+          ->stop ssr      # 停止 shadowsocks
+
+          ->start ssr      # 打开
+
+          ->restart ssr   # 重启
+测速
+	speedtest-cli
+
+关于升级
+	cd shadowsocks
+	git pull
+
+安装requirements.txt报错处理
+	pip freeze > requirements.txt
+	pip install -r requirements.txt
+
+无法安装libsodium
+	yum install gcc-c++
+
+
