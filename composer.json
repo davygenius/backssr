@@ -1,0 +1,5 @@
+{
+    "require": {
+        "chen-see/chen-pay": "^1.1"
+    }
+}
